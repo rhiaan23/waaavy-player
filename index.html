@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WaaavyPlayer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bs-body-bg: #0f172a;
+            --bs-body-color: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
+            padding: 2rem 0;
+        }
+
+        .container {
+            max-width: 800px;
+        }
+
+        .card {
+            background-color: #1e293b;
+            border: none;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        .card-header {
+            background-color: #334155;
+            border-bottom: none;
+            border-radius: 1rem 1rem 0 0 !important;
+            padding: 1.5rem;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        h1 {
+            font-weight: 700;
+            background: linear-gradient(45deg, #22c55e, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(45deg, #22c55e, #10b981);
+            border: none;
+            padding: 1rem;
+            font-weight: 500;
+            transition: opacity 0.2s ease;
+        }
+
+        .upload-btn:hover {
+            opacity: 0.9;
+        }
+
+        canvas {
+            width: 100%;
+            height: 80px;
+            background-color: #0f172a;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-panel {
+            background-color: #0f172a;
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #334155;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+
+        .info-value {
+            font-family: 'SF Mono', 'Cascadia Code', monospace;
+            color: #e2e8f0;
+        }
+
+        .volume-control {
+            background-color: #0f172a;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .volume-label {
+            color: #94a3b8;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .canvas-label {
+            color: #94a3b8;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #334155;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #22c55e;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #10b981;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header text-center">
+                <h1 class="display-5">WaaavyPlayer</h1>
+            </div>
+            <div class="card-body">
+                <label for="fileInput" class="upload-btn btn btn-primary w-100 mb-4">
+                    <i class="fas fa-cloud-upload-alt me-2"></i>Upload Audio File
+                </label>
+                <input type="file" id="fileInput" accept="audio/*">
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="volume-control">
+                            <div class="volume-label">
+                                <i class="fas fa-volume-left"></i>Left Channel
+                            </div>
+                            <input type="range" id="volumeLeft" class="form-range" min="0" max="1" step="0.1" value="1">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="volume-control">
+                            <div class="volume-label">
+                                <i class="fas fa-volume-right"></i>Right Channel
+                            </div>
+                            <input type="range" id="volumeRight" class="form-range" min="0" max="1" step="0.1" value="1">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="visualizer-section mb-4">
+                    <div class="canvas-label">
+                        <i class="fas fa-wave-square"></i>Left Channel Waveform
+                    </div>
+                    <canvas id="waveformLeft"></canvas>
+                    
+                    <div class="canvas-label">
+                        <i class="fas fa-wave-square"></i>Right Channel Waveform
+                    </div>
+                    <canvas id="waveformRight"></canvas>
+                    
+                    <div class="canvas-label">
+                        <i class="fas fa-wave-square"></i>Combined Waveform
+                    </div>
+                    <canvas id="waveformCombined"></canvas>
+                    
+                    <div class="canvas-label">
+                        <i class="fas fa-chart-bar"></i>Frequency Spectrum
+                    </div>
+                    <canvas id="spectrumAnalyzer"></canvas>
+                </div>
+                
+                <div class="info-panel">
+                    <div class="info-item">
+                        <span class="info-label">Time</span>
+                        <span class="info-value" id="currentTime">--:--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Duration</span>
+                        <span class="info-value" id="duration">--:--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Loudness</span>
+                        <span class="info-value" id="currentLoudness">-- dB</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Pitch</span>
+                        <span class="info-value" id="currentPitch">-- Hz</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">File Hash</span>
+                        <span class="info-value" id="fileHash">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.2/spark-md5.min.js"></script>
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const volumeLeftControl = document.getElementById('volumeLeft');
+        const volumeRightControl = document.getElementById('volumeRight');
+        const waveformLeftCanvas = document.getElementById('waveformLeft');
+        const waveformRightCanvas = document.getElementById('waveformRight');
+        const waveformCombinedCanvas = document.getElementById('waveformCombined');
+        const spectrumAnalyzerCanvas = document.getElementById('spectrumAnalyzer');
+        const currentTimeElement = document.getElementById('currentTime');
+        const durationElement = document.getElementById('duration');
+        const currentLoudnessElement = document.getElementById('currentLoudness');
+        const currentPitchElement = document.getElementById('currentPitch');
+        const fileHashElement = document.getElementById('fileHash');
+
+        let audioContext;
+        let sourceNode;
+        let analyserNode;
+        let splitterNode;
+        let mergerNode;
+        let gainNodeLeft;
+        let gainNodeRight;
+
+        fileInput.addEventListener('change', handleFileUpload);
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const arrayBuffer = e.target.result;
+                initializeAudio(arrayBuffer);
+                calculateFileHash(arrayBuffer);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function initializeAudio(arrayBuffer) {
+            if (audioContext) audioContext.close();
+
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            audioContext.decodeAudioData(arrayBuffer, (buffer) => {
+                sourceNode = audioContext.createBufferSource();
+                sourceNode.buffer = buffer;
+
+                analyserNode = audioContext.createAnalyser();
+                analyserNode.fftSize = 2048;
+
+                splitterNode = audioContext.createChannelSplitter(2);
+                mergerNode = audioContext.createChannelMerger(2);
+
+                gainNodeLeft = audioContext.createGain();
+                gainNodeRight = audioContext.createGain();
+
+                sourceNode.connect(splitterNode);
+                splitterNode.connect(gainNodeLeft, 0);
+                splitterNode.connect(gainNodeRight, 1);
+                gainNodeLeft.connect(mergerNode, 0, 0);
+                gainNodeRight.connect(mergerNode, 0, 1);
+                mergerNode.connect(analyserNode);
+                analyserNode.connect(audioContext.destination);
+
+                sourceNode.start(0);
+                startVisualization();
+                updateAudioInfo();
+            });
+        }
+
+        function startVisualization() {
+            const drawWaveform = (canvas, dataArray) => {
+                const canvasCtx = canvas.getContext('2d');
+                const width = canvas.width;
+                const height = canvas.height;
+                canvasCtx.clearRect(0, 0, width, height);
+                canvasCtx.lineWidth = 2;
+                canvasCtx.strokeStyle = '#22c55e';
+                canvasCtx.beginPath();
+                const sliceWidth = width * 1.0 / dataArray.length;
+                let x = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = v * height / 2;
+                    if (i === 0) {
+                        canvasCtx.moveTo(x, y);
+                    } else {
+                        canvasCtx.lineTo(x, y);
+                    }
+                    x += sliceWidth;
+                }
+                canvasCtx.lineTo(width, height / 2);
+                canvasCtx.stroke();
+            };
+
+            const drawSpectrum = () => {
+                const canvasCtx = spectrumAnalyzerCanvas.getContext('2d');
+                const width = spectrumAnalyzerCanvas.width;
+                const height = spectrumAnalyzerCanvas.height;
+                const dataArray = new Uint8Array(analyserNode.frequencyBinCount);
+                analyserNode.getByteFrequencyData(dataArray);
+                canvasCtx.clearRect(0, 0, width, height);
+                const barWidth = (width / dataArray.length) * 2.5;
+                let x = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    const barHeight = dataArray[i] / 2;
+                    const hue = (barHeight / 128) * 120; // Green to red gradient
+                    canvasCtx.fillStyle = `hsl(${hue}, 70%, 50%)`;
+                    canvasCtx.fillRect(x, height - barHeight, barWidth, barHeight);
+                    x += barWidth + 1;
+                }
+            };
+
+            function animate() {
+                requestAnimationFrame(animate);
+                const dataArrayLeft = new Uint8Array(analyserNode.frequencyBinCount);
+                const dataArrayRight = new Uint8Array(analyserNode.frequencyBinCount);
+                const dataArrayCombined = new Uint8Array(analyserNode.frequencyBinCount);
+                analyserNode.getByteTimeDomainData(dataArrayCombined);
+                // Simulate left and right channel data
+                for (let i = 0; i < dataArrayCombined.length; i++) {
+                    dataArrayLeft[i] = dataArrayCombined[i] * gainNodeLeft.gain.value;
+                    dataArrayRight[i] = dataArrayCombined[i] * gainNodeRight.gain.value;
+                }
+                drawWaveform(waveformLeftCanvas, dataArrayLeft);
+                drawWaveform(waveformRightCanvas, dataArrayRight);
+                drawWaveform(waveformCombinedCanvas, dataArrayCombined);
+                drawSpectrum();
+                updateCurrentInfo();
+            }
+
+            animate();
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateAudioInfo() {
+            const duration = sourceNode.buffer.duration;
+            durationElement.textContent = formatTime(duration);
+        }
+
+        function updateCurrentInfo() {
+            const currentTime = audioContext.currentTime % sourceNode.buffer.duration;
+            currentTimeElement.textContent = formatTime(currentTime);
+
+            // Calculate current loudness (RMS)
+            const dataArray = new Float32Array(analyserNode.frequencyBinCount);
+            analyserNode.getFloatTimeDomainData(dataArray);
+            const rms = Math.sqrt(dataArray.reduce((sum, val) => sum + val * val, 0) / dataArray.length);
+            const loudnessDb = 20 * Math.log10(rms);
+            currentLoudnessElement.textContent = `${loudnessDb.toFixed(1)} dB`;
+
+            // Estimate current pitch (simple zero-crossing method)
+            let zeroCrossings = 0;
+            for (let i = 1; i < dataArray.length; i++) {
+                if ((dataArray[i - 1] < 0 && dataArray[i] >= 0) || (dataArray[i - 1] >= 0 && dataArray[i] < 0)) {
+                    zeroCrossings++;
+                }
+            }
+            const estimatedFrequency = (zeroCrossings * audioContext.sampleRate) / (2 * dataArray.length);
+            currentPitchElement.textContent = `${estimatedFrequency.toFixed(0)} Hz`;
+        }
+
+        function calculateFileHash(arrayBuffer) {
+            const spark = new SparkMD5.ArrayBuffer();
+            spark.append(arrayBuffer);
+            const hash = spark.end();
+            fileHashElement.textContent = hash;
+        }
+
+        volumeLeftControl.addEventListener('input', (e) => {
+            if (gainNodeLeft) gainNodeLeft.gain.setValueAtTime(e.target.value, audioContext.currentTime);
+        });
+
+        volumeRightControl.addEventListener('input', (e) => {
+            if (gainNodeRight) gainNodeRight.gain.setValueAtTime(e.target.value, audioContext.currentTime);
+        });
+    </script>
+</body>
+</html>
